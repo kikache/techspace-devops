@@ -1,0 +1,31 @@
+---
+- name: Patch Ubuntu 22.04 Servers
+  hosts: ubuntu_servers
+  become: true
+  vars:
+    reboot_required: false
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
+      register: upgrade_result
+
+    - name: Check if reboot is required
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_flag
+
+    - name: Set reboot required flag
+      set_fact:
+        reboot_required: true
+      when: reboot_flag.stat.exists
+
+    - name: Reboot the server if required
+      reboot:
+        msg: "Rebooting after patching"
+      when: reboot_required
